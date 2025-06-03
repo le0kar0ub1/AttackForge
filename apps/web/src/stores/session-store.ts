@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Session, SessionConfig, Message, ModelConfig } from '@attackforge/shared';
+import { Session, SessionConfig, Message, ModelConfig } from '@/lib/types';
 
 interface SessionStore {
   // Current session
@@ -13,6 +13,7 @@ interface SessionStore {
   // Actions
   createSession: (name: string, config: SessionConfig) => void;
   loadSession: (sessionId: string) => void;
+  clearCurrentSession: () => void;
   updateSession: (session: Session) => void;
   deleteSession: (sessionId: string) => void;
   
@@ -59,6 +60,10 @@ export const useSessionStore = create<SessionStore>()(
         if (session) {
           set({ currentSession: session });
         }
+      },
+      
+      clearCurrentSession: () => {
+        set({ currentSession: null });
       },
       
       updateSession: (session: Session) => {

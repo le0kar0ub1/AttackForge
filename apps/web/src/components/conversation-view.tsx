@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useSessionStore } from '@/stores/session-store';
 import { sendChatRequest, APIError } from '@/lib/api';
-import { Message } from '@attackforge/shared';
+import { Message } from '@/lib/types';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,9 +33,8 @@ export function ConversationView() {
     currentSession,
     addMessage,
     editMessage,
-    updateSession,
     exportSession,
-    loadSession,
+    clearCurrentSession,
   } = useSessionStore();
 
   const [currentStep, setCurrentStep] = useState<ConversationStep>('red-teamer');
@@ -50,7 +49,7 @@ export function ConversationView() {
   }
 
   const handleBackToDashboard = () => {
-    loadSession(''); // This will set currentSession to null
+    clearCurrentSession();
   };
 
   const handleGenerate = async () => {
@@ -61,16 +60,13 @@ export function ConversationView() {
 
     try {
       let config;
-      let role: Message['role'];
 
       switch (currentStep) {
         case 'red-teamer':
           config = currentSession.config.redTeamer;
-          role = 'red-teamer';
           break;
         case 'target':
           config = currentSession.config.target;
-          role = 'target';
           break;
         case 'judge':
           if (!currentSession.config.judge) {
@@ -78,7 +74,6 @@ export function ConversationView() {
             return;
           }
           config = currentSession.config.judge;
-          role = 'judge';
           break;
         default:
           return;

@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useSessionStore } from '@/stores/session-store';
-import { ModelConfig } from '@attackforge/shared';
+import { ModelConfig } from '@/lib/types';
 import { testModelConnection } from '@/lib/api';
 
 import {
@@ -59,7 +59,7 @@ export function ModelConfigDialog({
 
   const form = useForm<ModelConfigForm>({
     resolver: zodResolver(modelConfigSchema),
-    defaultValues: editConfig || {
+    defaultValues: {
       name: '',
       apiUrl: 'https://openrouter.ai/api/v1/chat/completions',
       apiKey: '',
@@ -67,6 +67,28 @@ export function ModelConfigDialog({
       systemPrompt: '',
     },
   });
+
+  // Update form values when editConfig changes
+  useEffect(() => {
+    if (editConfig) {
+      form.reset({
+        name: editConfig.name,
+        apiUrl: editConfig.apiUrl,
+        apiKey: editConfig.apiKey,
+        model: editConfig.model,
+        systemPrompt: editConfig.systemPrompt || '',
+      });
+    } else {
+      form.reset({
+        name: '',
+        apiUrl: 'https://openrouter.ai/api/v1/chat/completions',
+        apiKey: '',
+        model: '',
+        systemPrompt: '',
+      });
+    }
+    setTestResult(null);
+  }, [editConfig, form]);
 
   const onSubmit = async (data: ModelConfigForm) => {
     const config: ModelConfig = {
@@ -106,7 +128,7 @@ export function ModelConfigDialog({
       
       const success = await testModelConnection(config);
       setTestResult(success ? 'success' : 'error');
-    } catch (error) {
+    } catch {
       setTestResult('error');
     } finally {
       setTesting(false);
@@ -231,7 +253,7 @@ export function ModelConfigDialog({
                     />
                   </FormControl>
                   <FormDescription>
-                    Optional system prompt to set the model's behavior.
+                    Optional system prompt to set the model&apos;s behavior.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

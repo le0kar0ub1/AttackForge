@@ -2,18 +2,32 @@
 
 import { useState } from 'react';
 import { useSessionStore } from '@/stores/session-store';
+import { ModelConfig } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Settings, MessageSquare, Download } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Plus, Settings, MessageSquare, Download, Sparkles, Zap, Edit, Trash2 } from 'lucide-react';
 import { SessionSetupDialog } from '@/components/session-setup-dialog';
 import { ModelConfigDialog } from '@/components/model-config-dialog';
 import { ConversationView } from '@/components/conversation-view';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export default function Dashboard() {
   const [showSessionSetup, setShowSessionSetup] = useState(false);
   const [showModelConfig, setShowModelConfig] = useState(false);
+  const [editingModel, setEditingModel] = useState<ModelConfig | undefined>(undefined);
+  const [modelToDelete, setModelToDelete] = useState<ModelConfig | null>(null);
   
   const {
     currentSession,
@@ -21,6 +35,7 @@ export default function Dashboard() {
     modelConfigs,
     loadSession,
     deleteSession,
+    deleteModelConfig,
     exportSession,
   } = useSessionStore();
 
@@ -39,25 +54,63 @@ export default function Dashboard() {
     URL.revokeObjectURL(url);
   };
 
+  const handleEditModel = (model: ModelConfig) => {
+    setEditingModel(model);
+    setShowModelConfig(true);
+  };
+
+  const handleDeleteModel = (model: ModelConfig) => {
+    setModelToDelete(model);
+  };
+
+  const confirmDeleteModel = () => {
+    if (modelToDelete) {
+      deleteModelConfig(modelToDelete.id);
+      setModelToDelete(null);
+    }
+  };
+
+  const handleModelDialogClose = (open: boolean) => {
+    setShowModelConfig(open);
+    if (!open) {
+      setEditingModel(undefined);
+    }
+  };
+
   return (
     <div className="container mx-auto p-6">
       <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold">AttackForge</h1>
-          <p className="text-muted-foreground">
-            LLM Adversarial Testing Platform
+        <div className="space-y-2">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-purple-600 to-pink-600">
+              <Zap className="h-6 w-6 text-white" />
+            </div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+              AttackForge
+            </h1>
+          </div>
+          <p className="text-lg text-muted-foreground">
+            LLM Adversarial Testing Platform - Test AI Safety with Style
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-3">
+          <ThemeToggle />
           <Button
             variant="outline"
-            onClick={() => setShowModelConfig(true)}
+            onClick={() => {
+              setEditingModel(undefined);
+              setShowModelConfig(true);
+            }}
+            className="shadow-sm"
           >
             <Settings className="w-4 h-4 mr-2" />
             Models
           </Button>
-          <Button onClick={() => setShowSessionSetup(true)}>
-            <Plus className="w-4 h-4 mr-2" />
+          <Button 
+            onClick={() => setShowSessionSetup(true)}
+            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg"
+          >
+            <Sparkles className="w-4 h-4 mr-2" />
             New Session
           </Button>
         </div>
@@ -67,65 +120,113 @@ export default function Dashboard() {
         <ConversationView />
       ) : (
         <Tabs defaultValue="sessions" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="sessions">Sessions</TabsTrigger>
-            <TabsTrigger value="models">Model Configurations</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 h-12 bg-muted/50 rounded-xl">
+            <TabsTrigger 
+              value="sessions" 
+              className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-pink-600 data-[state=active]:text-white"
+            >
+              <MessageSquare className="w-4 h-4 mr-2" />
+              Sessions
+            </TabsTrigger>
+            <TabsTrigger 
+              value="models"
+              className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white"
+            >
+              <Settings className="w-4 h-4 mr-2" />
+              Model Configurations
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="sessions" className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Recent Sessions</h2>
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                  Recent Sessions
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Your adversarial testing sessions
+                </p>
+              </div>
               <Button
                 variant="outline"
                 onClick={() => setShowSessionSetup(true)}
+                className="shadow-sm"
               >
-                <Plus className="w-4 h-4 mr-2" />
+                <Sparkles className="w-4 h-4 mr-2" />
                 Create Session
               </Button>
             </div>
             
             {sessions.length === 0 ? (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-12">
-                  <MessageSquare className="w-12 h-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium mb-2">No sessions yet</h3>
-                  <p className="text-muted-foreground text-center mb-4">
-                    Create your first adversarial testing session to get started.
+              <Card className="border-2 border-dashed border-muted-foreground/25 bg-gradient-to-br from-muted/30 via-background to-muted/30">
+                <CardContent className="flex flex-col items-center justify-center py-16">
+                  <div className="rounded-full bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20 p-4 mb-6">
+                    <MessageSquare className="w-12 h-12 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2">No sessions yet</h3>
+                  <p className="text-muted-foreground text-center mb-6 max-w-md">
+                    Create your first adversarial testing session to start exploring AI safety and vulnerability testing.
                   </p>
-                  <Button onClick={() => setShowSessionSetup(true)}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Create Session
+                  <Button 
+                    onClick={() => setShowSessionSetup(true)}
+                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                  >
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Create Your First Session
                   </Button>
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {sessions.map((session) => (
-                  <Card key={session.id} className="cursor-pointer hover:shadow-md transition-shadow">
-                    <CardHeader>
+                  <Card key={session.id} className="group cursor-pointer hover:shadow-xl hover:shadow-purple-500/10 transition-all duration-300 border-0 bg-gradient-to-br from-card via-card to-muted/30">
+                    <CardHeader className="pb-3">
                       <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg">{session.name}</CardTitle>
-                        <Badge variant={session.status === 'active' ? 'default' : 'secondary'}>
+                        <CardTitle className="text-lg group-hover:text-purple-600 transition-colors">
+                          {session.name}
+                        </CardTitle>
+                        <Badge 
+                          variant={session.status === 'active' ? 'default' : 'secondary'}
+                          className={session.status === 'active' ? 'bg-gradient-to-r from-green-500 to-emerald-500' : ''}
+                        >
                           {session.status}
                         </Badge>
                       </div>
-                      <CardDescription>
+                      <CardDescription className="text-sm">
                         Created {new Date(session.createdAt).toLocaleDateString()}
                       </CardDescription>
                     </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2 text-sm text-muted-foreground">
-                        <div>Red Teamer: {session.config.redTeamer.name}</div>
-                        <div>Target: {session.config.target.name}</div>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-2 text-sm">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                          <span className="text-muted-foreground">Red Teamer:</span>
+                          <span className="font-medium">{session.config.redTeamer.name}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                          <span className="text-muted-foreground">Target:</span>
+                          <span className="font-medium">{session.config.target.name}</span>
+                        </div>
                         {session.config.judge && (
-                          <div>Judge: {session.config.judge.name}</div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+                            <span className="text-muted-foreground">Judge:</span>
+                            <span className="font-medium">{session.config.judge.name}</span>
+                          </div>
                         )}
-                        <div>{session.messages.length} messages</div>
+                        <div className="flex items-center gap-2 pt-1">
+                          <MessageSquare className="w-3 h-3 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">
+                            {session.messages.length} messages
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex gap-2 mt-4">
+                      <div className="flex gap-2">
                         <Button
                           size="sm"
                           onClick={() => loadSession(session.id)}
+                          className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
                         >
                           Open
                         </Button>
@@ -134,15 +235,15 @@ export default function Dashboard() {
                           variant="outline"
                           onClick={() => handleExport(session.id, 'json')}
                         >
-                          <Download className="w-3 h-3 mr-1" />
-                          Export
+                          <Download className="w-3 h-3" />
                         </Button>
                         <Button
                           size="sm"
-                          variant="destructive"
+                          variant="outline"
                           onClick={() => deleteSession(session.id)}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
                         >
-                          Delete
+                          ×
                         </Button>
                       </div>
                     </CardContent>
@@ -153,11 +254,22 @@ export default function Dashboard() {
           </TabsContent>
           
           <TabsContent value="models" className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Model Configurations</h2>
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                  Model Configurations
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Your AI model endpoints and settings
+                </p>
+              </div>
               <Button
                 variant="outline"
-                onClick={() => setShowModelConfig(true)}
+                onClick={() => {
+                  setEditingModel(undefined);
+                  setShowModelConfig(true);
+                }}
+                className="shadow-sm"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Add Model
@@ -165,33 +277,84 @@ export default function Dashboard() {
             </div>
             
             {modelConfigs.length === 0 ? (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-12">
-                  <Settings className="w-12 h-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium mb-2">No models configured</h3>
-                  <p className="text-muted-foreground text-center mb-4">
-                    Add your first model configuration to start testing.
+              <Card className="border-2 border-dashed border-muted-foreground/25 bg-gradient-to-br from-muted/30 via-background to-muted/30">
+                <CardContent className="flex flex-col items-center justify-center py-16">
+                  <div className="rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/20 p-4 mb-6">
+                    <Settings className="w-12 h-12 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2">No models configured</h3>
+                  <p className="text-muted-foreground text-center mb-6 max-w-md">
+                    Configure your AI models to start adversarial testing. You only need one model to get started.
                   </p>
-                  <Button onClick={() => setShowModelConfig(true)}>
+                  <Button 
+                    onClick={() => {
+                      setEditingModel(undefined);
+                      setShowModelConfig(true);
+                    }}
+                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                  >
                     <Plus className="w-4 h-4 mr-2" />
-                    Add Model
+                    Add Your First Model
                   </Button>
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {modelConfigs.map((config) => (
-                  <Card key={config.id}>
-                    <CardHeader>
-                      <CardTitle className="text-lg">{config.name}</CardTitle>
-                      <CardDescription>{config.model}</CardDescription>
+                  <Card key={config.id} className="group hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300 border-0 bg-gradient-to-br from-card via-card to-muted/30">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600">
+                          <Settings className="h-4 w-4 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <CardTitle className="text-lg group-hover:text-blue-600 transition-colors">
+                            {config.name}
+                          </CardTitle>
+                          <CardDescription className="text-sm font-mono">
+                            {config.model}
+                          </CardDescription>
+                        </div>
+                      </div>
                     </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2 text-sm text-muted-foreground">
-                        <div>API: {new URL(config.apiUrl).hostname}</div>
+                    <CardContent className="space-y-3">
+                      <div className="space-y-2 text-sm">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                          <span className="text-muted-foreground">API:</span>
+                          <span className="font-medium text-xs">
+                            {new URL(config.apiUrl).hostname}
+                          </span>
+                        </div>
                         {config.systemPrompt && (
-                          <div>Has system prompt</div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-purple-500"></div>
+                            <span className="text-muted-foreground">System prompt configured</span>
+                          </div>
                         )}
+                      </div>
+                      <div className="flex items-center justify-between pt-2">
+                        <Badge variant="outline" className="text-xs">
+                          Ready to use
+                        </Badge>
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleEditModel(config)}
+                            className="h-7 w-7 p-0"
+                          >
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleDeleteModel(config)}
+                            className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -209,8 +372,30 @@ export default function Dashboard() {
       
       <ModelConfigDialog
         open={showModelConfig}
-        onOpenChange={setShowModelConfig}
+        onOpenChange={handleModelDialogClose}
+        editConfig={editingModel}
       />
+
+      <AlertDialog open={!!modelToDelete} onOpenChange={() => setModelToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Model Configuration</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete &quot;{modelToDelete?.name}&quot;? This action cannot be undone.
+              Any sessions using this model will need to be reconfigured.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteModel}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -120,3 +120,144 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  .animate-gradient {
+    background-size: 400% 400%;
+    animation: gradient 15s ease infinite;
+  }
+  
+  .animate-pulse-slow {
+    animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  .glass-effect {
+    backdrop-filter: blur(16px) saturate(180%);
+    background-color: rgba(255, 255, 255, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.125);
+  }
+  
+  .dark .glass-effect {
+    background-color: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+}
+
+@keyframes gradient {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* Selection styling - High contrast for visibility */
+::selection {
+  background: #3b82f6; /* blue-500 */
+  color: #ffffff; /* white text */
+}
+
+.dark ::selection {
+  background: #60a5fa; /* blue-400 */
+  color: #000000; /* black text */
+}
+
+/* Special selection styling for select items */
+[data-radix-select-content] [data-radix-select-item]::selection {
+  background: #1d4ed8 !important; /* blue-700 */
+  color: #ffffff !important; /* white text */
+}
+
+.dark [data-radix-select-content] [data-radix-select-item]::selection {
+  background: #93c5fd !important; /* blue-300 */
+  color: #000000 !important; /* black text */
+}
+
+/* Enhanced select item visibility - Standard contrast colors */
+[data-radix-select-content] [data-radix-select-item] {
+  transition: all 0.15s ease-in-out !important;
+}
+
+/* Light mode - standard high contrast */
+[data-radix-select-content] [data-radix-select-item]:hover,
+[data-radix-select-content] [data-radix-select-item]:focus,
+[data-radix-select-content] [data-radix-select-item][data-highlighted] {
+  background-color: #f1f5f9 !important; /* slate-100 */
+  color: #0f172a !important; /* slate-900 */
+  outline: none !important;
+}
+
+/* Dark mode - standard high contrast */
+.dark [data-radix-select-content] [data-radix-select-item]:hover,
+.dark [data-radix-select-content] [data-radix-select-item]:focus,
+.dark [data-radix-select-content] [data-radix-select-item][data-highlighted] {
+  background-color: #1e293b !important; /* slate-800 */
+  color: #f1f5f9 !important; /* slate-100 */
+  outline: none !important;
+}
+
+/* Ensure base text color is visible */
+[data-radix-select-content] [data-radix-select-item] {
+  color: hsl(var(--foreground)) !important;
+}
+
+.dark [data-radix-select-content] [data-radix-select-item] {
+  color: hsl(var(--foreground)) !important;
+}
+
+/* Override any conflicting styles */
+[data-radix-select-content] {
+  background-color: hsl(var(--popover)) !important;
+  color: hsl(var(--popover-foreground)) !important;
+}
+
+/* Ensure text selection is enabled and visible */
+[data-radix-select-content] [data-radix-select-item] {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+}
+
+/* Remove any selection conflicts */
+[data-radix-select-content] [data-radix-select-item]::-moz-selection {
+  background: #1d4ed8 !important; /* blue-700 */
+  color: #ffffff !important; /* white text */
+}
+
+.dark [data-radix-select-content] [data-radix-select-item]::-moz-selection {
+  background: #93c5fd !important; /* blue-300 */
+  color: #000000 !important; /* black text */
+}
